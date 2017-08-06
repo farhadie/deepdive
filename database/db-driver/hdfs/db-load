@@ -28,9 +28,9 @@ do_load() {
         wait
     else
         source=$1; shift
-        cp $source /tmp/data-table
-        eval 'db-execute "$sql file:///tmp/data-table"'
-        rm /tmp/data-table
+        cp $source $DEEPDIVE_APP/tmp/data-table
+        eval 'db-execute "$sql file://${DEEPDIVE_APP}tmp/data-table"'
+        #rm $DEEPDIVE_APP/tmp/data-table
     fi
 }
 
