@@ -28,9 +28,8 @@ do_load() {
         wait
     else
         source=$1; shift
-        mkdir -p $DEEPDIVE_APP/tmp/
-        cp $source $DEEPDIVE_APP/tmp/data-table
-        eval 'db-execute "$sql file://${DEEPDIVE_APP}/tmp/data-table"'
+        eval "$HADOOP_HOME_URL/bin/hadoop fs -put $source $DEEPDIVE_DB_URL/tmp/data-table"
+        eval "db-execute '$sql ${DEEPDIVE_DB_URL}/tmp/data-table'"
         #rm $DEEPDIVE_APP/tmp/data-table
     fi
 }
