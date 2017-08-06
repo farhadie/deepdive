@@ -15,6 +15,8 @@ eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
     #
 )"
 
+current_dir=$(pwd)
+cd $SPARK_HOME_URL
 eval "$SPARK_HOME_URL/bin/spark-submit\
       --master $master \
       --deploy-mode $deploy_mode \
@@ -24,6 +26,7 @@ eval "$SPARK_HOME_URL/bin/spark-submit\
       --class diuf.exascale.deepdive.SparkConnector.SparkConnector \
       $DEEPDIVE_HOME/util/db-driver/hdfs/hdfs/target/scala-2.11/hdfs-assembly-1.0.jar '$DBNAME $@'"
 
+cd $current_dir
 #move tmp directory to correct directory
 read -r -a array <<< "$@"
 if [ "${array[0]}" = "CREATE" ]; then

@@ -29,6 +29,8 @@ command_arr=( $command )
 udf_url="${command_arr[3]}"
 scala_class_or_python_files="${command_arr[4]:-}"
 unset IFS
+current_dir=$(pwd)
+cd $SPARK_HOME_URL
 if [[ $udf_url ==  *.py ]]; then #submit python udfs
   eval "$SPARK_HOME_URL/bin/spark-submit\
         --master $master \
@@ -71,6 +73,6 @@ elif [[ $command == *"sampler-dw text2bin variable"* ]]; then
         --class diuf.exascale.deepdive.fg \
         $DEEPDIVE_HOME/util/spark-inference '$DBNAME' '$input_sql' '' "
 fi
-
+cd $current_dir
 eval "$HADOOP_HOME_URL/bin/hadoop fs -rm -r -f $DEEPDIVE_DB_URL/$output_relation"
 eval "$HADOOP_HOME_URL/bin/hadoop fs -mv $DEEPDIVE_DB_URL/${output_relation}_tmp $DEEPDIVE_DB_URL/$output_relation"
