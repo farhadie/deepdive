@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# db-init -- Initializes HDFS DIRECTORY configured for a DeepDive application
+# > eval "$(db-parse "$url")"
+# > db-init
+##
+set -eu
+# TODO remove echo
+# echo "$HADOOP_HOME_URL/bin/hadoop fs -mkdir $DEEPDIVE_DB_URL"
+eval "$HADOOP_HOME_URL/bin/hadoop fs -rm -r -f $DEEPDIVE_DB_URL" || error "hadoop is not configured"
+eval "$HADOOP_HOME_URL/bin/hadoop fs -mkdir -p $DEEPDIVE_DB_URL" || error "hadoop is not configured"
+echo "+ $DEEPDIVE_DB_URL created"

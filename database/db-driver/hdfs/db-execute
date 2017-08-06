@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# db-execute -- Executes a given SQL query against the PostgreSQL database configured for a DeepDive application
+# > eval "$(db-parse "$url")"
+# > db-execute SQL
+##
+set -eu
+
+sql=${1:?No SQL given}; shift
+
+# for classifying sql command for haddop and spark
+# TODO make it switch case
+sql_command=`echo $sql | awk '{print $1}'`
+table=`echo $sql | awk '{print $3}'`
+if [ "$sql_command" = "CREATE" ]; then
+  table_if_not_exists=`echo $sql | awk '{print $3,$4,$5}'`
+  if [[ "$DEEPDIVE_CURRENT_PROCESS_NAME" == "*process*" &&  "$table_if_not_exists" == "IF NOT EXISTS" ]]; then
+    echo "THIS IS EHSAN, NO NEED TO CREATE...I GUESS"
+  fi
+  if_like=`echo $sql | awk '{print $4}'`
+  if [[ "$if_like" == "(LIKE" ]]; then #this is a problem fo ruser direct command use $DEEPDIVE_CURRENT_PROCESS_NAME
+    like_table=`echo $sql | awk '{print $5}'`
+    eval "$HADOOP_HOME_URL/bin/hadoop fs -cp $DEEPDIVE_DB_URL/${like_table} $DEEPDIVE_DB_URL/${table}"
+  else
+    exec "db-prompt" "$sql" "$@"
+  fi
+elif [ "$sql_command" = "ASSIGNID" ]; then
+  exec "db-prompt" "$sql" "$@"
+elif [ "$sql_command" = "DROP" ]; then # call hadoop
+  exists_command=`echo $sql | awk '{print $3,$4}'`
+  if [ "$exists_command" = "IF EXISTS" ]; then
+    table=`echo $sql | awk '{print $5}'`
+  fi
+  eval "$HADOOP_HOME_URL/bin/hadoop fs -rm -r $DEEPDIVE_DB_URL/$table"
+  #eval "$HADOOP_HOME_URL/bin/hadoop fs -rm -r $DEEPDIVE_DB_URL/$table"
+
+elif [ "$sql_command" = "LOAD" ] || [ "$sql_command" = "\COPY" ]; then
+  exec db-prompt "$sql" "$@"
+
+elif [ "$sql_command" = "ALTER" ]; then
+  alter_command=`echo $sql | awk '{print $4,$5}'`
+  if [ "$alter_command" = "RENAME TO" ]; then # call hadoop
+    output_table=`echo $sql | awk '{print $6}'`
+    eval "$HADOOP_HOME_URL/bin/hadoop fs -mv $DEEPDIVE_DB_URL/$table $DEEPDIVE_DB_URL/$output_table"
+  fi
+
+elif [ "$sql_command" = "\d" ]; then
+  echo "checking for existing table"
+  echo "$sql"
+  table=`echo $sql | awk '{print $2}'`
+  eval "$HADOOP_HOME_URL/bin/hadoop fs -test -d $DEEPDIVE_DB_URL/$table"
+
+else
+  echo "db-prompt $sql $@"
+fi

@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# spark/compute-execute -- Executes a process on spark using all available processors
+# $ compute-execute input_sql=... command=... output_relation=...
+#
+# To limit the number of parallel processes, set the DEEPDIVE_NUM_PROCESSES
+# environment or the 'deepdive.computers.local.num_processes' in
+# computers.conf:
+# $ export DEEPDIVE_NUM_PROCESSES=2
+# $ compute-execute input_sql=... command=... output_relation=...
+##
+set -euo pipefail
+
+# load compute configuration
+
+eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
+    master='.master' \
+    deploy_mode='.deploy_mode' \
+    num_executors='.num_executors' \
+    driver_memory='.driver_memory' \
+    executor_memory='.executor_memory'
+    #
+)"
+
+DEEPDIVE_APP=$(find-deepdive-app)
+
+declare -- "$@"
+export IFS="& "
+command_arr=( $command )
+udf_url="${command_arr[3]}"
+scala_class_or_python_files="${command_arr[4]:-}"
+unset IFS
+if [[ $udf_url ==  *.py ]]; then #submit python udfs
+  eval "$SPARK_HOME_URL/bin/spark-submit\
+        --master $master \
+        --deploy-mode $deploy_mode \
+        --num-executors $num_executors \
+        --driver-memory $driver_memory \
+        --executor-memory $executor_memory \
+        --py-files $DEEPDIVE_HOME/lib/python/deepdive.py,$DEEPDIVE_HOME/lib/python/ddlib.zip,$DEEPDIVE_APP/$scala_class_or_python_files \
+        $DEEPDIVE_APP/$udf_url '$DBNAME' '$input_sql' '$output_relation' "
+elif [[  $udf_url ==  *.jar ]]; then #submit spark, java udfs
+  eval "$SPARK_HOME_URL/bin/spark-submit\
+        --master $master \
+        --deploy-mode $deploy_mode \
+        --num-executors $num_executors \
+        --driver-memory $driver_memory \
+        --executor-memory $executor_memory \
+        --class $scala_class_or_python_files \
+        $DEEPDIVE_APP/$udf_url '$DBNAME' '$input_sql' '$output_relation' "
+elif [[ $command == *"sampler-dw text2bin factor"* ]]; then
+  echo "$SPARK_HOME_URL/bin/spark-submit\
+        --master $master \
+        --deploy-mode $deploy_mode \
+        --num-executors $num_executors \
+        --driver-memory $driver_memory \
+        --executor-memory $executor_memory \
+        --class diuf.exascale.deepdive.fg \
+        $DEEPDIVE_HOME/util/spark-inference '$DBNAME' '$input_sql' '$implyFactor' '$numVariablesForFactor' '$areVariablesPositive' "
+
+elif [[ $command == *"sampler-dw text2bin variable"* ]]; then
+  echo "HOOOOY"
+  echo "command:"
+  echo "$command"
+  echo "$implyFactor"
+  echo "$SPARK_HOME_URL/bin/spark-submit\
+        --master $master \
+        --deploy-mode $deploy_mode \
+        --num-executors $num_executors \
+        --driver-memory $driver_memory \
+        --executor-memory $executor_memory \
+        --class diuf.exascale.deepdive.fg \
+        $DEEPDIVE_HOME/util/spark-inference '$DBNAME' '$input_sql' '' "
+fi
+
+eval "$HADOOP_HOME_URL/bin/hadoop fs -rm -r -f $DEEPDIVE_DB_URL/$output_relation"
+eval "$HADOOP_HOME_URL/bin/hadoop fs -mv $DEEPDIVE_DB_URL/${output_relation}_tmp $DEEPDIVE_DB_URL/$output_relation"

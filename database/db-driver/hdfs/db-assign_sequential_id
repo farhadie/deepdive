@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# db-assign_sequential_id -- Assigns a unique integer to every row for a table using PostgreSQL sequence generator
+# > eval "$(db-parse "$url")"
+# > db-assign_sequential_id TABLE ID_COLUMN [PART_ID_COLUMN]
+##
+set -euo pipefail
+
+[[ $# -gt 0 ]] || usage "$0" "Missing TABLE_CSV"
+[[ $# -gt 1 ]] || usage "$0" "Missing ID_COLUMN"
+
+TABLE_CSV=$1 IdColumn=$2 PartColumn=${3:-0}
+
+
+SQL="ASSIGNID $TABLE_CSV $IdColumn"
+echo "$SQL"
+db-execute "$SQL"

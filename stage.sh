@@ -97,6 +97,7 @@ stage runner/ps_descendants                                       util/
 stage runner/deepdive-compute                                     util/
 stage runner/load-compute-driver.sh                               util/
 stage runner/compute-driver/local                                 util/compute-driver/
+stage runner/compute-driver/spark                                 util/compute-driver/
 stage runner/compute-driver/torque                                util/compute-driver/
 stage runner/computers-default.conf                               util/
 stage .build/submodule/runner/mkmimo/mkmimo                       util/
@@ -116,6 +117,7 @@ stage database/db-driver/postgresql                               util/db-driver
 stage database/db-driver/greenplum                                util/db-driver/
 stage database/db-driver/postgresql-xl                            util/db-driver/
 stage database/db-driver/mysql                                    util/db-driver/
+stage database/db-driver/hdfs                                     util/db-driver/
 stage database/partition_id_range                                 util/
 stage database/tsj2fmt                                            util/
 stage database/pgtsv_to_json                                      util/
@@ -128,6 +130,11 @@ stage util/partition_integers                                     util/
 # DDlib
 stage ddlib/ddlib                                                 lib/python/
 stage ddlib/deepdive.py                                           lib/python/
+stage ddlib/spark                                                 lib/python/
+stage ddlib/ddlib.zip                                             lib/python/
+
+# spark libraries
+stage spark/udf_wrapper                                           lib/scala
 
 # DeepDive inference engine and supporting utilities
 #  copying shared libraries required by the dimmwitted sampler and generating a wrapper

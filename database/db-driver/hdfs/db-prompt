@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# db-prompt -- Starts a prompt for the PostgreSQL database configured for a DeepDive application
+# > eval "$(db-parse "$url")"
+# > db-prompt
+##
+#exec db-psql -d "$DBNAME" "$@"
+. load-compute-driver.sh
+
+eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
+    master='.master' \
+    deploy_mode='.deploy_mode' \
+    num_executors='.num_executors' \
+    driver_memory='.driver_memory' \
+    executor_memory='.executor_memory'
+    #
+)"
+
+eval "$SPARK_HOME_URL/bin/spark-submit\
+      --master $master \
+      --deploy-mode $deploy_mode \
+      --num-executors $num_executors \
+      --driver-memory $driver_memory \
+      --executor-memory $executor_memory \
+      --class diuf.exascale.deepdive.SparkConnector.SparkConnector \
+      $DEEPDIVE_HOME/util/db-driver/hdfs/hdfs/target/scala-2.11/hdfs-assembly-1.0.jar '$DBNAME $@'"
+
+#move tmp directory to correct directory
+read -r -a array <<< "$@"
+if [ "${array[0]}" = "CREATE" ]; then
+  eval "$HADOOP_HOME_URL/bin/hadoop fs -rm -r -f $DEEPDIVE_DB_URL/${array[2]}"
+  eval "$HADOOP_HOME_URL/bin/hadoop fs -mv $DEEPDIVE_DB_URL/${array[2]}_tmp $DEEPDIVE_DB_URL/${array[2]}"
+elif [ "${array[0]}" = "LOAD" ] ||  [ "${array[0]}" = "\COPY" ]; then
+  eval "$HADOOP_HOME_URL/bin/hadoop fs -rm -r -f $DEEPDIVE_DB_URL/${array[1]}"
+  eval "$HADOOP_HOME_URL/bin/hadoop fs -mv $DEEPDIVE_DB_URL/${array[1]}_tmp $DEEPDIVE_DB_URL/${array[1]}"
+elif [ "${array[0]}" = "ASSIGNID" ]; then
+  export IFS=","
+  table_arr=( ${array[1]} )
+  unset IFS
+  for i in "${table_arr[@]}"
+  do
+    eval "$HADOOP_HOME_URL/bin/hadoop fs -rm -r -f $DEEPDIVE_DB_URL/$i"
+    eval "$HADOOP_HOME_URL/bin/hadoop fs -mv $DEEPDIVE_DB_URL/${i}_tmp $DEEPDIVE_DB_URL/$i"
+  done
+fi
+#eval "java -jar $DEEPDIVE_HOME/util/db-driver/hdfs/hdfs/target/scala-2.11/hdfs-assembly-1.0.jar '$DBNAME $@'"

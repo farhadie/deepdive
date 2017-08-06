@@ -18,6 +18,28 @@ if [[ -z "$url" ]]; then
     url=$(eval echo "$(cat "$DEEPDIVE_APP"/db.url)")
 fi
 
+#hadoop file for finding hadoop home directory
+hadoop_url=${HADOOP_HOME_URL:-}
+if [[ -z "$hadoop_url" ]]; then
+    DEEPDIVE_APP=$(find-deepdive-app)
+    export DEEPDIVE_APP
+    string=$(cat "$DEEPDIVE_APP"/hadoop.url)
+    # remove last "/" if needed
+    [[ $string == /*/ ]] && string=${string:1:(-1)}
+    hadoop_url=$(eval echo $string)
+fi
+
+#spark file for finding spark home directory
+spark_url=${SPARK_HOME_URL:-}
+if [[ -z "$spark_url" ]]; then
+    DEEPDIVE_APP=$(find-deepdive-app)
+    export DEEPDIVE_APP
+    string=$(cat "$DEEPDIVE_APP"/spark.url)
+    # remove last "/" if needed
+    [[ $string == /*/ ]] && string=${string:1:(-1)}
+    spark_url=$(eval echo $string)
+fi
+
 # recognize the database type from the URL scheme
 dbtype=${url%%://*}
 
@@ -48,6 +70,11 @@ done
 # default environment setup script
 escape4sh export DEEPDIVE_DB_URL="${url}"
 escape4sh export PATH="$DEEPDIVE_HOME"/util/db-driver/"${dbtype}":"$PATH"
+
+#Hadoop home directory
+escape4sh export HADOOP_HOME_URL="${hadoop_url}"
+#SPARK home directory
+escape4sh export SPARK_HOME_URL="${spark_url}"
 
 # parse the URL and print necessary environment setup script
 db-parse "$url"
