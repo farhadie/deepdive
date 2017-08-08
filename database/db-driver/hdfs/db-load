@@ -31,9 +31,9 @@ do_load() {
         echo $source
         [ -f $source ] && echo "Found" || echo "Not found"
         eval "$HADOOP_HOME_URL/bin/hadoop fs -mkdir -p $DEEPDIVE_DB_URL/tmp"
-        eval "$HADOOP_HOME_URL/bin/hadoop fs -put -f $source $DEEPDIVE_DB_URL/tmp/data-table"
+        eval "$HADOOP_HOME_URL/bin/hadoop fs -put $source $DEEPDIVE_DB_URL/tmp/data-table"
         eval "db-execute '$sql ${DEEPDIVE_DB_URL}/tmp/data-table'"
-        #eval "$HADOOP_HOME_URL/bin/hadoop fs -rm $DEEPDIVE_DB_URL/tmp/data-table"
+        eval "$HADOOP_HOME_URL/bin/hadoop fs -rm $DEEPDIVE_DB_URL/tmp/data-table"
         #rm $DEEPDIVE_APP/tmp/data-table
     fi
 }
