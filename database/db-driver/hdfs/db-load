@@ -33,7 +33,7 @@ do_load() {
         eval "$HADOOP_HOME_URL/bin/hadoop fs -mkdir -p $DEEPDIVE_DB_URL/tmp"
         eval "$HADOOP_HOME_URL/bin/hadoop fs -put $source $DEEPDIVE_DB_URL/tmp/data-table"
         eval "db-execute '$sql ${DEEPDIVE_DB_URL}/tmp/data-table'"
-        eval "$HADOOP_HOME_URL/bin/hadoop fs -rm $source $DEEPDIVE_DB_URL/tmp/data-table"
+        eval "$HADOOP_HOME_URL/bin/hadoop fs -rm $DEEPDIVE_DB_URL/tmp/data-table"
         #rm $DEEPDIVE_APP/tmp/data-table
     fi
 }
