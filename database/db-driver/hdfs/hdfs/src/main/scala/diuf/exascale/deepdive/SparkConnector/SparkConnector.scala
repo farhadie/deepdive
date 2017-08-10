@@ -58,7 +58,6 @@ object SparkConnector {
               val rowRdd = rdd.map(v => Row(v: _*))
               val newdf  = spark.createDataFrame(rowRdd, df.schema)
               newdf.write.format("parquet").save("/"+hadoop_dir+"/"+name+"_tmp")
-              newdf.show()
               println("creating complete.")
             }
             // "create table"
@@ -69,8 +68,6 @@ object SparkConnector {
               val table = spark.read.json(tableDD)
               val order = util.reorder(sql_args.drop(3).mkString(" "))
               val table_reordered = table.select(order.head, order.tail:_*)
-              table_reordered.show()
-              table_reordered.printSchema()
               table_reordered.write.format("parquet").save("/"+hadoop_dir+"/"+name+"_tmp")
               println("creating complete.")
             }
